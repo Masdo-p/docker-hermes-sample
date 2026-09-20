@@ -33,20 +33,27 @@ CMD ["gateway", "run"]
 
 ## Langkah deploy
 
-### 1. Pastikan Dockerfile ada di git repo
-Handlify build DARI repo, bukan file upload. `deploy_project` TIDAK bisa build
-Dockerfile (cuma static/node). Repo ini sudah berisi Dockerfile — cukup pastikan
-sudah ke-push ke remote (GitHub public atau Forgejo internal gitlab.qiscus.io).
+### 1. Deploy dari repo public ini (default — TIDAK perlu bikin/push repo)
+Dockerfile sudah ada di repo ini dan publik, jadi arahkan Coolify langsung ke
+URL-nya. `deploy_project` TIDAK bisa build Dockerfile (cuma static/node) — pakai
+`create_app_from_repo`.
 
-### 2. Deploy
-- Repo public (GitHub): `create_app_from_repo`
-- Repo private / Forgejo: `deploy_private_repo`
+```
+create_app_from_repo(
+  name          = "hermes-<nama-unik>",   # JANGAN "hermes-agent" (nabrak app lain)
+  git_repository= "https://github.com/rajapulau/docker-hermes-sample.git",
+  git_branch    = "main",
+  build_pack    = "dockerfile",
+  ports_exposes = "9119",
+  project_uuid  = <list_projects>,         # project Handlify
+  server_uuid   = <list_servers>,          # server handlify-node-*
+)
+```
+Simpan `uuid` app dari hasilnya untuk langkah berikutnya.
 
-Parameter penting (dua-duanya):
-- `build_pack = "dockerfile"`
-- `ports_exposes = "9119"`
-- `git_branch = "main"`
-- `project_uuid` + `server_uuid` (ambil dari list_projects / list_servers)
+Mau ubah Dockerfile? Fork repo ini dulu, push perubahan, lalu ganti
+`git_repository` ke fork-mu (atau pakai `deploy_private_repo` untuk repo
+private / Forgejo `gitlab.qiscus.io`). Untuk deploy standar, ini tidak perlu.
 
 ### 3. Auth dashboard  ← JEBAKAN UTAMA
 Hermes MENOLAK bind dashboard ke 0.0.0.0 tanpa auth provider → container crash-loop.

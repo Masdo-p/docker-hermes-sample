@@ -4,6 +4,12 @@ ENV HERMES_DASHBOARD=1 \
     HERMES_DASHBOARD_HOST=0.0.0.0 \
     HERMES_DASHBOARD_PORT=9119
 
+# Claude Code + Codex CLIs baked into the image (survive redeploys).
+# Base image ships Node 26 + npm at /usr/local/bin and ends as root.
+RUN npm install -g --no-audit --fetch-retries=5 \
+      @anthropic-ai/claude-code @openai/codex && \
+    npm cache clean --force
+
 EXPOSE 9119
 
 # Readiness probe. Hermes boots slowly (s6 init + skill sync), so during a

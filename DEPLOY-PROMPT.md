@@ -8,47 +8,31 @@ push repo. Salin blok di bawah sebagai prompt pertama ke Claude Code / Codex.
 Deploy Hermes Agent ke Handlify (Qiscus Builder) dari repo public yang sudah ada.
 JANGAN bikin Dockerfile baru atau push repo — Dockerfile-nya sudah ada di repo ini.
 
-Prasyarat: MCP `qiscus-builder` aktif.
+Prasyarat: MCP `handlify` aktif.
 
-GANTI placeholder ini dulu:
-- APP_NAME     = hermes-<namamu>        (HARUS unik — jangan "hermes-agent")
-- ALLOW_EMAILS = kamu@qiscus.com        (email yang boleh buka URL; bisa >1)
+Deploy Hermes Agent ke Handlify. Ikuti persis:
 
-Langkah:
+0) install claude code dan codex di container
 
-1) Deploy dari repo public ini:
-   create_app_from_repo(
-     name          = APP_NAME,
-     git_repository= "https://github.com/rajapulau/docker-hermes-sample.git",
-     git_branch    = "main",
-     build_pack    = "dockerfile",
-     ports_exposes = "9119",
-     project_uuid  = <ambil dari list_projects>,   # project Handlify
-     server_uuid   = <ambil dari list_servers>,    # server handlify-node-*
-   )
-   Simpan `uuid` app dari hasilnya.
+1) APP_NAME = hermes- (HARUS unik — jangan "hermes-agent")
 
-2) Auth dashboard — WAJIB (tanpa ini container crash-loop). Panggil
-   manage_secrets(uuid) untuk dapat link dashboard, lalu MINTA OWNER isi env
-   berikut di sana (agent TIDAK bisa mengisinya sendiri — ini langkah manual):
-     HERMES_DASHBOARD_BASIC_AUTH_USERNAME = admin
-     HERMES_DASHBOARD_BASIC_AUTH_PASSWORD = <password alfanumerik — generate yang kuat>
-     HERMES_DASHBOARD_BASIC_AUTH_SECRET   = <random hex 32 byte>   # opsional, sesi stabil
-   PENTING: pakai `_PASSWORD` (plaintext), JANGAN `_PASSWORD_HASH` — hash punya
-   karakter `$` yang kepotong saat ditempel ke env → login gagal. Hermes hash
-   sendiri di memori. Setelah isi → klik Apply & redeploy.
+2) Deploy dari repo public ini: create_app_from_repo( name = APP_NAME, git_repository= "https://github.com/rajapulau/docker-hermes-sample.git", git_branch = "main", build_pack = "dockerfile", ports_exposes = "9119", project_uuid = , # project Handlify server_uuid = , # server handlify-node-* ) Simpan uuid app dari hasilnya.
 
-3) Batasi akses URL (gerbang Google SSO):
-   set_access(uuid, level="team", allow=ALLOW_EMAILS)
+3) Deploy pakai create_app_from_repo (public) / deploy_private_repo (private) dengan build_pack=dockerfile, ports_exposes=9119, plus project_uuid + server_uuid.
 
-4) Verifikasi:
-   - list_deployments_for_app(uuid) → finished
-   - get_logs(uuid) → muncul `HERMES_DASHBOARD_READY port=9119`
-   - URL balas HTTP 302 stabil (bukan 502; tunggu ~1 menit habis redeploy)
-   - Login: Google (email tim) → form hermes (admin + password)
+4) Set basic auth via Handlify secrets dashboard (owner isi sendiri):
+   HERMES_DASHBOARD_BASIC_AUTH_USERNAME=admin
+   HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=<password alfanumerik>   ← plaintext, JANGAN _PASSWORD_HASH (karakter $ kepotong)
+   HERMES_DASHBOARD_BASIC_AUTH_SECRET=<random hex 32 byte>       (opsional)
+   Lalu Apply & redeploy.
 
-Catatan:
-- Mau ubah Dockerfile? Fork repo ini dulu, lalu arahkan `git_repository` ke fork-mu.
-- Dashboard jalan tanpa login model; untuk agent LLM-nya, set provider model terpisah.
+5) Batasi akses: set_access level=team allow="ganjar@qiscus.com".
+
+6) Verifikasi: URL balas 302 stabil, log ada HERMES_DASHBOARD_READY port=9119, login Google → admin+password.
+
+Tiga hal yang paling menentukan sukses/gagalnya (yang tadi bikin kita muter):
+1. Harus lewat git repo — deploy_project nggak bisa build Dockerfile, jadi wajib create_app_from_repo/deploy_private_repo + build_pack=dockerfile.
+2. Auth pakai _PASSWORD plaintext, bukan _PASSWORD_HASH — ini yang bikin "Invalid username or password" kemarin.
+3. HEALTHCHECK di Dockerfile — ini yang menghilangkan 502 tiap deploy.
 
 ---

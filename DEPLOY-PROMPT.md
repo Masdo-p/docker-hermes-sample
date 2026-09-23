@@ -26,7 +26,7 @@ Deploy Hermes Agent ke Handlify. Ikuti persis:
    HERMES_DASHBOARD_BASIC_AUTH_SECRET=<random hex 32 byte>       (opsional)
    Lalu Apply & redeploy.
 
-5) Batasi akses: set_access level=team allow="<email>".
+5) Batasi akses: set_access level=team allow="youremail@emai.com".
 
 6) Verifikasi: URL balas 302 stabil, log ada HERMES_DASHBOARD_READY port=9119, login Google → admin+password.
 

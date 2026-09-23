@@ -1,0 +1,21 @@
+# Hermes Agent untuk Handlify (Coolify, build_pack=dockercompose).
+# Data hermes (HERMES_HOME=/opt/data) disimpan di named volume supaya tidak
+# hilang tiap redeploy. JANGAN mount seluruh /opt: /opt/hermes berisi kode app
+# dari image, kalau ikut di-volume maka update image tidak akan berlaku.
+services:
+  hermes:
+    build: .
+    restart: unless-stopped
+    expose:
+      - "9119"
+    environment:
+      # Diisi owner lewat Handlify secrets (manage_secrets) — jangan taruh di repo.
+      # Pakai _PASSWORD plaintext, BUKAN _PASSWORD_HASH (karakter $ kepotong).
+      - HERMES_DASHBOARD_BASIC_AUTH_USERNAME=${HERMES_DASHBOARD_BASIC_AUTH_USERNAME:-admin}
+      - HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=${HERMES_DASHBOARD_BASIC_AUTH_PASSWORD}
+      - HERMES_DASHBOARD_BASIC_AUTH_SECRET=${HERMES_DASHBOARD_BASIC_AUTH_SECRET:-}
+    volumes:
+      - hermes-data:/opt/data
+
+volumes:
+  hermes-data:

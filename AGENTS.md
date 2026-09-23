@@ -28,8 +28,9 @@ CMD ["gateway", "run"]
 ```
 - `CMD ["gateway","run"]` BENAR untuk image ini (entrypoint dispatch-nya menerima
   arg itu; default CMD kosong). Jangan dihapus.
-- `HEALTHCHECK` WAJIB: hermes boot ~1-2 menit; ini bikin Coolify tahan container
-  lama tetap serve sampai yang baru sehat → hilangkan 502 Bad Gateway saat redeploy.
+- `HEALTHCHECK` WAJIB: hermes boot ~1-2 menit; Coolify pakai ini untuk tahu kapan
+  container siap. (Di build_pack `dockerfile` ini juga mencegah 502 lewat rolling update;
+  di compose tetap ada jeda singkat — lihat "Persistensi data".)
 
 ## Langkah deploy
 
@@ -40,16 +41,33 @@ URL-nya. `deploy_project` TIDAK bisa build Dockerfile (cuma static/node) — pak
 
 ```
 create_app_from_repo(
-  name          = "hermes-<nama-unik>",   # JANGAN "hermes-agent" (nabrak app lain)
-  git_repository= "https://github.com/rajapulau/docker-hermes-sample.git",
-  git_branch    = "main",
-  build_pack    = "dockerfile",
-  ports_exposes = "9119",
-  project_uuid  = <list_projects>,         # project Handlify
-  server_uuid   = <list_servers>,          # server handlify-node-*
+  name            = "hermes-<nama-unik>",   # JANGAN "hermes-agent" (nabrak app lain)
+  git_repository  = "https://github.com/rajapulau/docker-hermes-sample.git",
+  git_branch      = "main",
+  build_pack      = "dockercompose",
+  compose         = True,
+  compose_location= "/docker-compose.yml",
+  ports_exposes   = "9119",
+  project_uuid    = <list_projects>,         # project Handlify
+  server_uuid     = <list_servers>,          # server handlify-node-*
 )
 ```
 Simpan `uuid` app dari hasilnya untuk langkah berikutnya.
+
+#### Persistensi data (`docker-compose.yml`)
+- `docker-compose.yml` build dari `Dockerfile` yang sama, lalu mount named volume
+  `hermes-data` ke `/opt/data` (`HERMES_HOME`: config, sesi, skill, `.local/bin`).
+  Data ini TIDAK hilang saat redeploy.
+- JANGAN mount seluruh `/opt`: `/opt/hermes` berisi kode app dari image. Kalau ikut
+  masuk volume, versi lama tersimpan di volume dan update image tidak berlaku.
+- Tanpa compose (build_pack `dockerfile`), `/opt/data` cuma volume anonim dan dibuat
+  baru tiap redeploy, jadi datanya hilang.
+- Konsekuensi: redeploy compose di Coolify stop dulu, baru start, jadi ada jeda
+  502 sekitar 1-2 menit selama hermes boot. HEALTHCHECK tetap menandai kapan container
+  sudah siap, tapi tidak lagi mencegah jeda itu.
+- Migrasi dari app lama (build_pack `dockerfile`): build pack tidak bisa diganti, jadi
+  bikin app baru. Kalau perlu, salin `/opt/data` dari container lama ke volume baru
+  (`docker cp` di node), lalu hapus app lama setelah owner konfirmasi.
 
 Mau ubah Dockerfile? Fork repo ini dulu, push perubahan, lalu ganti
 `git_repository` ke fork-mu (atau pakai `deploy_private_repo` untuk repo
@@ -82,11 +100,13 @@ Level lain: `company` (semua @qiscus.com), `public`, `password`.
 - `list_deployments_for_app(uuid)` → status finished.
 - `get_logs(uuid)` → muncul `HERMES_DASHBOARD_READY port=9119` (bukan
   "Refusing to bind dashboard").
-- URL balas HTTP 302 ke SSO Google secara stabil (bukan 502).
+- URL balas HTTP 302 ke SSO Google secara stabil (bukan 502) setelah boot selesai.
+- Redeploy sekali, lalu cek config/sesi hermes masih ada (volume jalan).
 - Login: Google (email tim) → form hermes (admin + password).
 
 ## Catatan
-- Saat redeploy, tunggu ~1 menit; berkat HEALTHCHECK 502 minimal/hilang.
+- Saat redeploy, tunggu ~1-2 menit (compose: container lama stop dulu, jadi sempat 502).
+- Data di `/opt/data` (volume `hermes-data`) tetap ada setelah redeploy.
 - Dashboard jalan tanpa login model. Kalau perlu agent-nya benar-benar jalanin
   LLM/task, konfigurasi provider model terpisah (`hermes model` / env API key provider).
 - Bersihkan bila perlu: `delete_project` / hapus app dari dashboard.

@@ -47,6 +47,7 @@ create_app_from_repo(
   build_pack      = "dockercompose",
   compose         = True,
   compose_location= "/docker-compose.yml",
+  fqdn_env        = "SERVICE_FQDN_HERMES_9119",  # WAJIB: tanpa ini URL di-pin ke APP_3000 (salah)
   ports_exposes   = "9119",
   project_uuid    = <list_projects>,         # project Handlify
   server_uuid     = <list_servers>,          # server handlify-node-*

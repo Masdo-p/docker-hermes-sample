@@ -16,7 +16,7 @@ Deploy Hermes Agent ke Handlify. Ikuti persis:
 
 1) APP_NAME = hermes- (HARUS unik — jangan "hermes-agent")
 
-2) Deploy dari repo public ini: create_app_from_repo( name = APP_NAME, git_repository= "https://github.com/rajapulau/docker-hermes-sample.git", git_branch = "main", build_pack = "dockercompose", compose = True, compose_location = "/docker-compose.yml", ports_exposes = "9119", project_uuid = , # project Handlify server_uuid = , # server handlify-node-* ) Simpan uuid app dari hasilnya.
+2) Deploy dari repo public ini: create_app_from_repo( name = APP_NAME, git_repository= "https://github.com/rajapulau/docker-hermes-sample.git", git_branch = "main", build_pack = "dockercompose", compose = True, compose_location = "/docker-compose.yml", fqdn_env = "SERVICE_FQDN_HERMES_9119", ports_exposes = "9119", project_uuid = , # project Handlify server_uuid = , # server handlify-node-* ) Simpan uuid app dari hasilnya.
 
 3) Deploy pakai create_app_from_repo (public) / deploy_private_repo (private) dengan build_pack=dockercompose + compose=True (pakai docker-compose.yml di repo), ports_exposes=9119, plus project_uuid + server_uuid.
 

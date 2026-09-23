@@ -9,6 +9,8 @@ services:
     expose:
       - "9119"
     environment:
+      # Magic var Coolify: route domain app ke service ini di port 9119.
+      - SERVICE_FQDN_HERMES_9119
       # Diisi owner lewat Handlify secrets (manage_secrets) — jangan taruh di repo.
       # Pakai _PASSWORD plaintext, BUKAN _PASSWORD_HASH (karakter $ kepotong).
       - HERMES_DASHBOARD_BASIC_AUTH_USERNAME=${HERMES_DASHBOARD_BASIC_AUTH_USERNAME:-admin}
